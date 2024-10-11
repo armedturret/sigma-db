@@ -62,16 +62,17 @@ def main():
 
                 login_choice = input_utils.get_input_matching("Would you like create an account (1) or login (2): ", regex="[12]")
                 username = ""
+                userid = -1
                 if login_choice == "1":
-                    username = user_funcs.create_account(conn)
+                    username, userid = user_funcs.create_account(conn)
                 elif login_choice == "2":
-                    print("TODO: Not implemented!")
+                    username, userid = user_funcs.login(conn)
 
                 # Login failed (somehow), this shouldn't be possible (normally)
-                if username == "":
+                if username == "" or userid == -1:
                     return 1
 
-                print(f"Welcome {username}!")
+                print(f"\nWelcome {username}!\n")
 
     except KeyboardInterrupt:
         # Keyboard interrupt is not a failure
