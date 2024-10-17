@@ -10,9 +10,12 @@ import sys
 import psycopg2
 import getpass
 from sshtunnel import SSHTunnelForwarder
+import json
 
 import user_funcs
 import input_utils
+
+pass_file = "credentials.json"
 
 sigma_title = """
 Welcome to:
@@ -35,8 +38,17 @@ def main():
     :return: 0 on success
     """
     try:
-        dbuser = input("CS Username: ")
-        dbpass = getpass.getpass("CS Password: ")
+        with open('credentials.json', 'r') as cf:
+            credentials = json.load(cf)
+
+        if not "username" in credentials:
+            print("Missing CS account username")
+            return 1
+        if not "password" in credentials:
+            print("Missing CS account password")
+            return 1
+        dbuser = credentials["username"]
+        dbpass = credentials["password"]
 
         with SSHTunnelForwarder(
             ('starbug.cs.rit.edu', 22),
