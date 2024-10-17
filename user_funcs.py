@@ -7,8 +7,25 @@ Functions to handle queries related to users
 from datetime import datetime
 
 import input_utils
+import hashlib
 
 MAX_INPUT_LEN = 255
+
+def pass_to_hash(password: str, username: str) -> str:
+    """
+    Converts a password to a hash stored in the database.
+
+    :param password: Plaintext password
+    :param username: Plaintext username (used for salt)
+    :return: The hash of the password
+    """
+    saltfunc = hashlib.md5()
+    saltfunc.update(bytearray(username.encode('utf-8')))
+
+    hashfunc = hashlib.sha512()
+    hashfunc.update(bytearray(password.encode('utf-8')))
+    hashfunc.update(saltfunc.digest())
+    return hashfunc.hexdigest()
 
 def create_account(conn) -> tuple[str, int]:
     """
@@ -50,7 +67,7 @@ def create_account(conn) -> tuple[str, int]:
                 print("Email already in use!")
                 email = ""
 
-        password = input_utils.get_input_matching(f"Password: ", MAX_INPUT_LEN, hide_input=True)
+        password = pass_to_hash(input_utils.get_input_matching(f"Password: ", MAX_INPUT_LEN, hide_input=True), username)
         first_name = input_utils.get_input_matching(f"First Name: ", MAX_INPUT_LEN)
         last_name = input_utils.get_input_matching(f"Last Name: ", MAX_INPUT_LEN)
 
@@ -85,7 +102,7 @@ def login(conn) -> tuple[str, int]:
     with conn.cursor() as curs:
         while True:
             username = input_utils.get_input_matching(f"Username: ", MAX_INPUT_LEN)
-            password = input_utils.get_input_matching(f"Password: ", MAX_INPUT_LEN, hide_input=True)
+            password = pass_to_hash(input_utils.get_input_matching(f"Password: ", MAX_INPUT_LEN, hide_input=True), username)
 
             curs.execute("SELECT username, userid FROM \"user\" WHERE username = %s AND password = %s", (username, password))
             results = curs.fetchall()
