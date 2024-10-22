@@ -14,9 +14,10 @@ def browse_movies(conn):
     search_type = input_utils.get_input_matching("1 - Title\n2 - Release Date\n3 - Cast Member\n4 - Studio Name\n5 - Genre\n> ", regex="[12345]")
 
     with conn.cursor() as curs:
+        # This query concatenates genres together, but it only lists the earlieast release date
         query = """
         SELECT
-            movieid, title,
+            movieid, title, length,
             (
                 SELECT
                     STRING_AGG(g.genrename, ', ')
@@ -42,7 +43,22 @@ def browse_movies(conn):
         match search_type:
             case "1":
                 query += "WHERE LOWER(m.title) LIKE LOWER(%s)"
-                args.append("%{}%".format(input_utils.get_input_matching("Movie name: ")))
+                args.append("%{}%".format(input_utils.get_input_matching("Movie Name: ")))
+            case "5":
+                query += """
+                    WHERE m.movieid IN
+                    (
+                        SELECT
+                            mg.movieid
+                        FROM
+                            "moviegenre" AS mg
+                        LEFT JOIN
+                            "genre" AS g ON (mg.genreid = g.genreid)
+                        WHERE
+                            LOWER(g.genrename) LIKE LOWER(%s)
+                    )
+                """
+                args.append("%{}%".format(input_utils.get_input_matching("Genre: ")))
 
         curs.execute(query, args)
         print(curs.fetchall())
