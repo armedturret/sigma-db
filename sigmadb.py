@@ -13,6 +13,7 @@ from sshtunnel import SSHTunnelForwarder
 import json
 
 import user_funcs
+import movie_funcs
 import input_utils
 
 pass_file = "credentials.json"
@@ -85,6 +86,18 @@ def main():
                     return 1
 
                 print(f"\nWelcome {username}!\n")
+
+                print("What would you like to do?")
+
+                action = ""
+                while action != "1":
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n> ", regex="[12]")
+
+                    match action:
+                        case "2":
+                            movie_funcs.browse_movies(conn)
+
+                print("Goodbye!")
 
     except KeyboardInterrupt:
         # Keyboard interrupt is not a failure
