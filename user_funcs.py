@@ -116,3 +116,11 @@ def login(conn) -> tuple[str, int]:
                 return results[0]
 
             print("Username or password incorrect!")
+
+def create_collection(conn):
+    user_collection = list()
+    loop_state = True
+    while loop_state:
+        
+
+        return [""]
