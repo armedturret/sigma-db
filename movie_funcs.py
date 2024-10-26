@@ -232,9 +232,9 @@ def browse_movies(conn) -> int:
                 if selected_film >= len(results):
                     print("Movie not in list!")
                     skip_query = True
-
-                # user input is not the actual movie id, need to convert here
-                return results[selected_film][0]
+                else:
+                    # user input is not the actual movie id, need to convert here
+                    return results[selected_film][0]
 
             elif user_input == 'e':
                 return -1
@@ -244,3 +244,34 @@ def browse_movies(conn) -> int:
                         sort_param.order += 1
                         # wrap around sort orders
                         sort_param.order %= 3
+
+
+def rate_movie(conn, user_id, movie_id):
+    """
+    Assigns a movie a (0-5 star) rating given by a user.
+
+    :param conn: Connection to the database.
+    :param user_id: The ID of the user rating a movie.
+    :param movie_id: The ID of the movie being rated.
+    """
+
+    rating = int(input_utils.get_input_matching("Enter a rating (0-5): ", regex="^[0-5]$"))
+
+    with conn.cursor() as curs:
+
+        # Check if the user already rated this movie
+        curs.execute("SELECT rating FROM rated WHERE userid = %s AND movieid = %s", (user_id, movie_id))
+        existing_rating = curs.fetchone()
+
+        if existing_rating:
+            # If the user has already rated this movie, update their rating
+            curs.execute("UPDATE rated SET rating = %s WHERE userid = %s AND movieid = %s", (rating, user_id, movie_id))
+            print(f"Updated your rating for this movie to {rating} stars!")
+        else:
+            # Otherwise, assign the movie a new rating
+            curs.execute("INSERT INTO rated (userid, movieid, rating) VALUES (%s, %s, %s)", (user_id, movie_id, rating))
+            print(f"You gave this movie a {rating} star rating!")
+
+        conn.commit()
+
+        return

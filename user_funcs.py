@@ -80,6 +80,8 @@ def create_account(conn) -> tuple[str, int]:
                     datetime.now(),\
                     datetime.now()))
 
+        conn.commit()
+
         curs.execute("SELECT userid FROM \"user\" WHERE username = %s", (username,))
         results = curs.fetchall()
         if len(results) != 1:
@@ -116,6 +118,7 @@ def login(conn) -> tuple[str, int]:
                 return results[0]
 
             print("Username or password incorrect!")
+    conn.commit()
 
 def follow_user(conn, userid):
     """
