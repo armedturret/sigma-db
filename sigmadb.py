@@ -99,7 +99,6 @@ def main():
                             if selected_movie_id == -1:
                                 break
                             else:
-                                print("You selected: " + str(selected_movie_id) + "!")
                                 watch_or_rate = input_utils.get_input_matching("1 - watch movie\n2 - rate movie\n> ", regex="[12]")
                                 # add functionality for view_movie in later branch
                                 if watch_or_rate == "2":
