@@ -91,11 +91,13 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n> ", regex="[12]")
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - following\n", regex="[123]")
 
                     match action:
                         case "2":
                             movie_funcs.browse_movies(conn)
+                        case "3":
+                            user_funcs.following_menu(conn, userid)
 
                 print("Goodbye!")
 

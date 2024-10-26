@@ -116,3 +116,70 @@ def login(conn) -> tuple[str, int]:
                 return results[0]
 
             print("Username or password incorrect!")
+
+def follow_user(conn, userid):
+    """
+    Guides user through following another user
+
+    :param conn: Connection to database
+    :param userid: ID of currently logged in user
+    """
+    with conn.cursor() as curs:
+        # prompt for email to follow
+        print("Who would you like to follow?")
+        email = input_utils.get_input_matching("Email: ", MAX_INPUT_LEN,  "^\S+@\S+\.\S+$", "Not a valid email address")
+
+        # check if user exists
+        curs.execute("SELECT userid, username FROM \"user\" WHERE email=%s", (email,))
+        results = curs.fetchall()
+        if len(results) == 0:
+            print(f"\nUser with email {email} doesn't exist!")
+        else:
+            followingid = results[0][0]
+            following_username = results[0][1]
+
+            # check if trying to follow self
+            if userid == followingid:
+                print("\nCan't follow self!")
+                return
+
+            # check if already following
+            curs.execute("SELECT * FROM following WHERE followerid = %s AND followingid = %s", (userid, followingid))
+            results = curs.fetchall()
+            if len(results) > 0:
+                print(f"\nAlready following {following_username}!")
+                # follow user if not already followed
+            else:
+                answer = input_utils.get_input_matching(f"follow {following_username}? y/n\n", regex="[yn]")
+                match answer:
+                    case "y":
+                        curs.execute("INSERT INTO \"following\" (followerid, followingid) VALUES (%s, %s)", (userid, followingid))
+                        print(f"\nNow following {following_username}!")
+
+
+def following_menu(conn, userid):
+    """
+    Give the user the option to either follow/unfollow a user or view who they are following
+
+    :param conn: Connection to database
+    :param userid: ID of currently logged in user
+    """
+    print("following submenu: What would you like to do?")
+    action = ""
+    while action != "1":
+        action = input_utils.get_input_matching("1 - back to menu\n2 - follow user\n3 - unfollow user\n4 - view who you're following\n", regex="[1234]")
+
+        match action:
+            # follow a user
+            case "2":
+                follow_user(conn, userid)
+            # unfollow a user
+            case "3":
+                #TODO
+                print("unfollow user function!")
+            # view who you follow
+            case "4":
+                #TODO
+                print("view who you follow function!")
+        
+    print("Back to menu!")
