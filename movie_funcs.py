@@ -248,14 +248,14 @@ def browse_movies(conn) -> int:
 
 def rate_movie(conn, user_id, movie_id):
     """
-    Assigns a movie a (1-5 star) rating given by a user.
+    Assigns a movie a (0-5 star) rating given by a user.
 
     :param conn: Connection to the database.
     :param user_id: The ID of the user rating a movie.
     :param movie_id: The ID of the movie being rated.
     """
 
-    rating = int(input_utils.get_input_matching("Enter a rating (1-5): ", regex="^[1-5]$"))
+    rating = int(input_utils.get_input_matching("Enter a rating (0-5): ", regex="^[0-5]$"))
 
     with conn.cursor() as curs:
 
@@ -271,5 +271,7 @@ def rate_movie(conn, user_id, movie_id):
             # Otherwise, assign the movie a new rating
             curs.execute("INSERT INTO rated (userid, movieid, rating) VALUES (%s, %s, %s)", (user_id, movie_id, rating))
             print(f"You gave this movie a {rating} star rating!")
+
+        conn.commit()
 
         return
