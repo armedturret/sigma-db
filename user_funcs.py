@@ -147,7 +147,7 @@ def follow_user(conn, userid):
                 return
 
             # check if already following
-            curs.execute("SELECT * FROM following WHERE followerid = %s AND followingid = %s", (userid, followingid))
+            curs.execute("SELECT * FROM \"following\" WHERE followerid = %s AND followingid = %s", (userid, followingid))
             results = curs.fetchall()
             if len(results) > 0:
                 print(f"\nAlready following {following_username}!")
@@ -158,7 +158,43 @@ def follow_user(conn, userid):
                     case "y":
                         curs.execute("INSERT INTO \"following\" (followerid, followingid) VALUES (%s, %s)", (userid, followingid))
                         print(f"\nNow following {following_username}!")
+    conn.commit()
 
+
+def unfollow_user(conn, userid):
+    """
+    Guides user through unfollowing another user
+
+    :param conn: Connection to database
+    :param userid: ID of currently logged in user
+    """
+    with conn.cursor() as curs:
+        # prompt for email to unfollow
+        print("Who would you like to unfollow?")
+        email = input_utils.get_input_matching("Email: ", MAX_INPUT_LEN,  "^\S+@\S+\.\S+$", "Not a valid email address")
+
+        # check if user exists
+        curs.execute("SELECT userid, username FROM \"user\" WHERE email=%s", (email,))
+        results = curs.fetchall()
+        if len(results) == 0:
+            print(f"\nUser with email {email} doesn't exist!")
+        else:
+            followingid = results[0][0]
+            following_username = results[0][1]
+
+            # check if already following
+            curs.execute("SELECT * FROM \"following\" WHERE followerid = %s AND followingid = %s", (userid, followingid))
+            results = curs.fetchall()
+            # unfollow user
+            if len(results) > 0:
+                answer = input_utils.get_input_matching(f"unfollow {following_username}? y/n\n", regex="[yn]")
+                match answer:
+                    case "y":
+                        curs.execute("DELETE FROM \"following\" WHERE followerid = %s AND followingid = %s", (userid, followingid))
+                        print(f"\nUnfollowed {following_username}!")
+            else:
+                print(f"\nNot following {following_username}!")
+    conn.commit()
 
 def following_menu(conn, userid):
     """
@@ -178,8 +214,7 @@ def following_menu(conn, userid):
                 follow_user(conn, userid)
             # unfollow a user
             case "3":
-                #TODO
-                print("unfollow user function!")
+                unfollow_user(conn, userid)
             # view who you follow
             case "4":
                 #TODO
