@@ -120,9 +120,10 @@ def login(conn) -> tuple[str, int]:
             print("Username or password incorrect!")
     conn.commit()
 
+
 def follow_user(conn, userid):
     """
-    Guides user through following another user
+    Guides user through following another user specified by email
 
     :param conn: Connection to database
     :param userid: ID of currently logged in user
@@ -163,7 +164,7 @@ def follow_user(conn, userid):
 
 def unfollow_user(conn, userid):
     """
-    Guides user through unfollowing another user
+    Guides user through unfollowing another user specified by email
 
     :param conn: Connection to database
     :param userid: ID of currently logged in user
@@ -196,6 +197,74 @@ def unfollow_user(conn, userid):
                 print(f"\nNot following {following_username}!")
     conn.commit()
 
+
+def view_following(conn, userid):
+    """
+    Displays 10 other users that the current user follows at a time and gives 
+    the option to either return to following submenu, view more users, or unfollow a listed user
+
+    :param conn: Connection to database
+    :param userid: ID of currently logged in user
+    """
+    with conn.cursor() as curs:
+
+        action = ""
+        start_index = 0
+        end_index = 10
+        while action != "1":
+            # get next 10 users that are followed
+            curs.execute("SELECT username, email, userid FROM \"user\" WHERE userid IN (SELECT followingid FROM \"following\" WHERE followerid = %s LIMIT %s OFFSET %s)", (userid, end_index, start_index))
+            results = curs.fetchall()
+
+            # if following anyone, display them
+            if len(results) > 0:
+                # print 10 users at a time
+                for i in range(len(results)):
+                    print("\t%s. Username: %s\tEmail: %s" % (i, results[i][0], results[i][1]))
+
+                if len(results) < 10:
+                    print("End of following list!")
+
+                # prompt if user wants to go back or see more users
+                action = input_utils.get_input_matching("\n1 - back to following menu\n2 - view more\n3 - view previous\n4 - unfollow user\n", regex="[1234]")
+
+                match action:
+                    # move indexes for next page if available, else repeat page
+                    case "2":
+                        if len(results) == 10:
+                            start_index += 10
+                            end_index += 10
+
+                    case "3":
+                        if start_index >= 10:
+                            start_index -= 10
+                            end_index -= 10
+                        else:
+                            print("Can't go back any further!")
+
+                    # prompts for what user to unfollow
+                    case "4":
+                        selection = input_utils.get_input_matching("Enter in the number of who to unfollow, 'b' for back\n", regex="[0123456789b]")
+                        if selection != "b":
+                            selection_index = int(selection)
+                            # check if selection is in bounds
+                            if selection_index < len(results):
+                                selection_id = results[selection_index][2]
+                                selection_username = results[selection_index][0]
+                                # unfollow user
+                                curs.execute("DELETE FROM \"following\" WHERE followerid = %s AND followingid = %s", (userid, selection_id))
+                                print(f"Unfollowed %s!\n" % (selection_username))
+                            else:
+                                print("\nInvalid selection!")
+
+            else:
+                print("\nNot following anyone!")
+                break
+        print("\nBack to following submenu!")
+        
+    conn.commit()
+
+
 def following_menu(conn, userid):
     """
     Give the user the option to either follow/unfollow a user or view who they are following
@@ -217,7 +286,6 @@ def following_menu(conn, userid):
                 unfollow_user(conn, userid)
             # view who you follow
             case "4":
-                #TODO
-                print("view who you follow function!")
+                view_following(conn, userid)
         
     print("Back to menu!")
