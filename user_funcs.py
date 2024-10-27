@@ -218,6 +218,9 @@ def view_following(conn, userid):
 
             # if following anyone, display them
             if len(results) > 0:
+                # print user number range being shown
+                num_diff = 10 - len(results)
+                print("\nFollowed users %s-%s:" % (start_index + 1, end_index - num_diff))
                 # print 10 users at a time
                 for i in range(len(results)):
                     print("\t%s. Username: %s\tEmail: %s" % (i, results[i][0], results[i][1]))
@@ -226,7 +229,7 @@ def view_following(conn, userid):
                     print("End of following list!")
 
                 # prompt if user wants to go back or see more users
-                action = input_utils.get_input_matching("\n1 - back to following menu\n2 - view more\n3 - view previous\n4 - unfollow user\n", regex="[1234]")
+                action = input_utils.get_input_matching("\n1 - back to manage following menu\n2 - view more\n3 - view previous\n4 - unfollow user\n", regex="[1234]")
 
                 match action:
                     # move indexes for next page if available, else repeat page
@@ -260,7 +263,7 @@ def view_following(conn, userid):
             else:
                 print("\nNot following anyone!")
                 break
-        print("\nBack to following submenu!")
+        print("\nBack to manage following submenu!")
         
     conn.commit()
 
@@ -272,7 +275,7 @@ def following_menu(conn, userid):
     :param conn: Connection to database
     :param userid: ID of currently logged in user
     """
-    print("following submenu: What would you like to do?")
+    print("manage following submenu: What would you like to do?")
     action = ""
     while action != "1":
         action = input_utils.get_input_matching("1 - back to menu\n2 - follow user\n3 - unfollow user\n4 - view who you're following\n", regex="[1234]")
