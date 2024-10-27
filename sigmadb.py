@@ -100,7 +100,8 @@ def main():
                                 pass
                             else:
                                 watch_or_rate = input_utils.get_input_matching("1 - watch movie\n2 - rate movie\n> ", regex="[12]")
-                                # add functionality for view_movie in later branch
+                                if watch_or_rate == "1":
+                                    movie_funcs.watch_movie(conn, userid, selected_movie_id)
                                 if watch_or_rate == "2":
                                     movie_funcs.rate_movie(conn, userid, selected_movie_id)
                                 else:
