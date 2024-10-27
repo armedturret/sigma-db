@@ -91,7 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n> ", regex="[12]")
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n", regex="[123]")
 
                     match action:
                         case "2":
@@ -106,7 +106,8 @@ def main():
                                     movie_funcs.rate_movie(conn, userid, selected_movie_id)
                                 else:
                                     pass
-
+                        case "3":
+                            user_funcs.following_menu(conn, userid)
                 print("Goodbye!")
 
     except KeyboardInterrupt:
