@@ -275,3 +275,33 @@ def rate_movie(conn, user_id, movie_id):
         conn.commit()
 
         return
+
+
+def watch_movie(conn, user_id, movie_id):
+    """
+    Allows the user to watch a movie and record when 
+    they started and stopped watching.
+
+    :param conn: Connection to the database.
+    :param user_id: The ID of the user watching a movie.
+    :param movie_id: The ID of the movie being watched.
+    """
+
+    date_watched = datetime.datetime.now()
+
+    with conn.cursor() as curs:
+
+        # Get the movie's length
+        curs.execute("SELECT length FROM movie WHERE movieid = %s", (movie_id,))
+        movie_length = curs.fetchone()[0]
+
+        curs.execute("INSERT INTO watched (userid, movieid, dateTime, watchDuration) VALUES (%s, %s, %s, %s)", 
+                     (user_id, movie_id, date_watched, movie_length))
+
+        conn.commit()
+
+    date_and_time = date_watched.strftime("%m/%d/%Y at %I:%M %p")
+
+    print(f"You watched this movie on {date_and_time} for {movie_length} minutes!")
+
+    return
