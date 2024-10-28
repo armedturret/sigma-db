@@ -178,21 +178,60 @@ def create_collection(conn, user_ID) -> None:
                     loop_state = False
                     break
                 else:
-                    # Not going to work since you are making a single new collection with movies connected to that collection
-                    # Movies have to be looped to connect the collection to that specific movie
                     movie_ID = str(movie_id)
                     curs.execute(query_two, (movie_ID, collection_ID))
+                break_loop = int(input_utils.get_input_matching("""\nWould you like to continue adding more movies to your collection (type 0)
+                                                            or stop adding movies (type 1): """))
+                if break_loop:
+                    pass
+                else:
+                    break
             else:
                 print("Not an acceptable answer for decision! Ending function")
                 return
     return
-"""
 
-"""
-def modify_collection(conn) -> None:
-    pass
-"""
+def modify_collection(conn, user_ID, movie_ID) -> None:
+    """
+    modify a current collection that is in the incollection table 
+    """
+    # A Query to get the collection ID for a certain User ID
+    query = """
+    SELECT collectionid FROM moviecollection WHERE madeby = %s", (user_ID)
+    """
+    # A query to remove a movie from a collection
+    remove_movie_query = """
+    DELETE FROM incollection WHERE movieid = %s AND collectionid = %s (movie_ID, collection_ID)
+    """
+    # A query to add a movie into a collection
+    add_movie_query = """
+    INSERT INTO incollections (movieid, collectionid)
+    VALUES(movie_ID, collection_ID)
+    """
+    collection_ID = ""
+    with conn.cursor() as curs:
+        curs.execute(query, (user_ID))
+        collection_ID = curs.fetchone()[0]
+        if collection_ID is None:
+            print("Collection ID was not found for correlated User ID!! Ending function...")
+            return
+        print("what action would you like to do?")
+        action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie: """)
+        if action is not "1" or "2":
+           while True:
+               print("action is not the correct input. Please input the right number")
+               action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie: """)
+        match action:
+            # action for removing a movie
+            case "1":
+                curs.execute(remove_movie_query, (movie_ID, collection_ID))
+                # action for adding a movie
+            case "2":
+                curs.execute(add_movie_query, (movie_ID, collection_ID))
+    return
 
-"""
 def display_collection(conn) -> None:
+    """
+
+    """
     pass
