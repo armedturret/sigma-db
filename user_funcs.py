@@ -155,18 +155,15 @@ def create_collection(conn, user_ID) -> None:
         decision = int(input_utils.get_input_matching("\n1 - Create an empty collection \n2 - Create a new collection that will be filled with movies: ", regex='[12]'))
         #Creates an empty collection
         if decision == 1:
-            curs.execute(collection_ID_query, ())
-            collection_ID_results = int(curs.fetchone()[0]) + 1
-            collection_ID = str(collection_ID_results)
             collection_Name = input("What would you like to name your new collection?\n")
             curs.execute("INSERT INTO moviecollection (name, madeby) VALUES(%s, %s)", (collection_Name, user_ID))
         elif decision == 2:
-            curs.execute(collection_ID_query, ())
-            collection_ID_results = int(curs.fetchone()[0])
-            collection_ID_results += 1
-            collection_ID = str(collection_ID_results)
             collection_Name = input("What would you like to name your new collection?\n")
             curs.execute("INSERT INTO moviecollection (name, madeby) VALUES(%s, %s)", (collection_Name, user_ID))
+            curs.execute(collection_ID_query, ())
+            collection_ID_results = int(curs.fetchone()[0])
+            collection_ID = str(collection_ID_results)
+            print(collection_ID_results)
             movie_id = 0
             while loop_state:
                 #adding movies that are in the database to a collection when making a new collection
@@ -180,20 +177,27 @@ def create_collection(conn, user_ID) -> None:
                 else:
                     movie_ID = str(movie_id)
                     curs.execute(query_two, (movie_ID, collection_ID))
-                break_loop = int(input_utils.get_input_matching("""\nWould you like to continue adding more movies to your collection (type 0)
-                                                            or stop adding movies (type 1): """))
-                if break_loop:
+                break_loop = int(input_utils.get_input_matching("""\n0 - Continue adding movies
+                                                                \n1 - Stop adding movies: """))
+                if break_loop != 1 or 0:
+                    while True:
+                        print(f"Invalid Input of {break_loop}, please enter a valid input")
+                        break_loop = int(input_utils.get_input_matching("""\n0 - Continue adding movies
+                                                                    \n1 - Stop adding movies: """))
+                        if break_loop == "0" or "1":
+                            break
+                elif break_loop == 0:
                     pass
                 else:
                     break
             else:
                 print("Not an acceptable answer for decision! Ending function")
                 return
-    print(f"finished create_collection function!!")
+    print(f"Finished create_collection function!!")
 
 
 
-def modify_collection(conn, user_ID, movie_ID) -> None:
+def modify_collection(conn, user_ID) -> None:
     """
     modify a current collection that is in the incollection table 
 
@@ -232,51 +236,114 @@ def modify_collection(conn, user_ID, movie_ID) -> None:
     WHERE collectionid = %s
     """
     collection_ID = ""
+    movie_ID = movie_funcs.browse_movies(conn)
     with conn.cursor() as curs:
-        curs.execute(query, (user_ID))
-        collection_ID = curs.fetchone()
-        if collection_ID is None:
-            print("Collection ID was not found for correlated User ID!! Ending function...")
-            return
-        print("what action would you like to do?")
-        action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie
-                                                \n3 - modify name of collection\n4 - delete collection: """)
-        if action != "1" or "2" or "3" or "4":
-           while True:
-               print("action is not the correct input. Please input the right number")
-               action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie
-                                                \n3 - modify name of collection\n4 - delete collection: """)
-               if action == "1" or "2" or "3" or "4":
-                   break
-        match action:
-            # action for removing a movie
-            case "1":
-                curs.execute(remove_movie_query, (movie_ID, collection_ID))
-                # action for adding a movie
-            case "2":
-                curs.execute(add_movie_query, (movie_ID, collection_ID))
-            case "3":
-                new_name = input("what would you like to name your collection: ")
-                curs.execute(change_name_query, (new_name, collection_ID))
-            case "4":
-                curs.execute(delete_moviecollection_query, (collection_ID))
+        curs.execute(query, (user_ID,))
+        collection_ID_list = curs.fetchall()
+        for i in range(0, len(collection_ID_list)-1):
+            if collection_ID_list[i] is None:
+                print("Collection ID was not found for correlated User ID!! Ending function...")
+                return
+            print("what action would you like to do?")
+            action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie
+                                                    \n3 - modify name of collection\n4 - delete collection
+                                                    \n5 - exit function: """)
+            if action is not "1" or "2" or "3" or "4" or "5":
+                while True:
+                    print("action is not the correct input. Please input the right number")
+                    action = input_utils.get_input_matching("""1 - remove a movie\n2 - add a movie
+                                                        \n3 - modify name of collection\n4 - delete collection:
+                                                        \n5 - exit function: """)
+                    if action is "1" or "2" or "3" or "4" or "5":
+                        break
+            match action:
+                # action for removing a movie
+                case "1":
+                    curs.execute(remove_movie_query, (movie_ID, collection_ID_list[i]))
+                    # action for adding a movie
+                case "2":
+                    curs.execute(add_movie_query, (movie_ID, collection_ID_list[i]))
+                case "3":
+                    new_name = input("what would you like to name your collection: ")
+                    curs.execute(change_name_query, (new_name, collection_ID_list[i]))
+                case "4":
+                      curs.execute(delete_moviecollection_query, (collection_ID_list[i]))
+                case "5":
+                    return
+    if movie_ID == -1:
+        return
     return
 
-def browse_collections(conn, user_ID):
+def browse_collections(conn, user_ID) -> None:
     """
-    
+    A different version to print all information of a users collection/
+    list of collections
+
+    :param conn: Connection to the database
+    :param user_ID: The ID of the user
+    :return: Nothing
     """
     #
     browse_query = """
     SELECT name FROM moviecollection 
-    WHERE madeby = %s ORDER BY ACS
+    WHERE madeby = %s ORDER BY name ASC
     """
+     # A Query to get the collection ID for a certain User ID
+    query = """
+    SELECT collectionid FROM moviecollection WHERE madeby = %s
+    """
+    # A Query to get the name of the collection to be displayed
+    get_name_query = """
+    SELECT name FROM moviecollection
+    WHERE collectionid = %s 
+    ORDER BY ASC
+    """
+    # A query to copunt the number of movies in a collection
+    count_movie_query = """
+    SELECT COUNT(movieid) FROM incollection
+    WHERE collectionid = %s
+    """
+    # A query to get all lengths of all movies in a collection
+    get_length_movie_query = """
+    SELECT SUM(length) FROM movie as m
+    WHERE m.movieid in (
+    SELECT movieid FROM incollection
+    WHERE collectionid = %s
+    )
+    """
+    print(f"Printing all collections belong to the user...")
+    collection_ID = ""
+    with conn.cursor() as curs:
+        curs.execute(query, (user_ID,))
+        #Get list of collection IDs for a user and iterate through them
+        collection_ID_list = curs.fetchall()
+        for i in range (0, len(collection_ID_list)-1):
 
-    return
+            #Get name of current collection ID
+            collection_ID = collection_ID_list[i]
+            curs.execute(browse_query, (collection_ID))
+            collection_name = curs.fectone()[0]
+            print(collection_name)
+
+            #Get number of movies for current collection ID
+            curs.execute(count_movie_query, (collection_ID))
+            num_movie = int(curs.fetchone()[0])
+
+            #Get total length of all movies in the collection (in minutes)
+            curs.execute(get_length_movie_query, (collection_ID))
+            total_movie_length = int(curs.fetchone()[0])
+            movie_length_hours = total_movie_length/60
+            movie_length_mins = total_movie_length%60
+            #print a formated string of each collection
+            print(f"Name of collection: {collection_name}\n\tTotal number of movies {num_movie}\n\tTotal length of all movies in collection: {movie_length_hours}:{movie_length_mins}")
+
+
+    
+    return ""
 
 def display_collection(conn, user_ID) -> None:
     """
-
+    The list of collections 
     """
      # A Query to get the collection ID for a certain User ID
     query = """
@@ -306,7 +373,7 @@ def display_collection(conn, user_ID) -> None:
     loop_state = True
     with conn.cursor() as curs:
         curs.execute(query, (user_ID))
-        collection_ID = curs.fetchone()[0]
+        collection_ID = curs.fetchall()
         while loop_state:
             display_name = curs.execute(get_name_query, (collection_ID))
             print("Name:" + display_name)

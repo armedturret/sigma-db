@@ -232,9 +232,9 @@ def browse_movies(conn) -> int:
                 if selected_film >= len(results):
                     print("Movie not in list!")
                     skip_query = True
-
-                # user input is not the actual movie id, need to convert here
-                return results[selected_film][0]
+                else:
+                    # user input is not the actual movie id, need to convert here
+                    return results[selected_film][0]
 
             elif user_input == 'e':
                 return -1

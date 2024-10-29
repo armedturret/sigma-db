@@ -91,16 +91,18 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n8 - create collection\n9 - modify collection\n> ", regex='[1289]')
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n4 - create collection\n5 - modify collection\n6 - Display collection> ", regex='[12456]')
 
                     match action:
                         case "2":
                             movie_funcs.browse_movies(conn)
-                        case "8":
+                        case "4":
                             user_funcs.create_collection(conn, userid)
-                        case "9":
-                            movie_id = movie_funcs.browse_movies(conn)
-                            user_funcs.modify_collection(conn, userid, movie_id)
+                        case "5":
+                            #movie_id = movie_funcs.browse_movies(conn)
+                            user_funcs.modify_collection(conn, userid)
+                        case "6":
+                            user_funcs.browse_collections(conn, userid)
 
                 print("Goodbye!")
 
