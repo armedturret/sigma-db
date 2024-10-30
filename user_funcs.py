@@ -354,6 +354,17 @@ def modify_collection(conn, user_id, collection_id) -> None:
     WHERE collectionid = %s
     """
 
+    watch_collection_query = """
+    WITH viewing(userid, datetime) AS (VALUES (%s, %s))
+    INSERT INTO watched (userid, movieid, datetime, watchduration)
+    SELECT viewing.userid, ic.movieid, viewing.datetime, m.length
+    FROM incollection AS ic
+    LEFT JOIN movie AS m
+    ON (m.movieid = ic.movieid)
+    CROSS JOIN viewing
+    WHERE ic.collectionid = %s
+    """
+
     with conn.cursor() as curs:
         while True:
             # TODO: Display movies in collection
@@ -364,8 +375,9 @@ def modify_collection(conn, user_id, collection_id) -> None:
                 case 1:
                     return
                 case 2:
-                    # TODO: Implement movie viewing
-                    pass
+                    curs.execute(watch_collection_query, (user_id, datetime.now(), collection_id,))
+                    conn.commit()
+                    print("Watched all movies!")
                 case 3:
                     # TODO: Implement movie removal
                     pass
@@ -381,17 +393,17 @@ def modify_collection(conn, user_id, collection_id) -> None:
                         else:
                             curs.execute(add_movie_query, (movie_id, collection_id))
                             print("Movie added!")
-                            curs.commit()
+                    conn.commit()
                 case 5:
                     new_name = input_utils.get_input_matching("What would you like to name your collection: ")
                     curs.execute(change_name_query, (new_name, collection_id))
-
+                    conn.commit()
                 case 6:
                     curs.execute(delete_all_movie_query, (collection_id,))
                     curs.execute(delete_moviecollection_query, (collection_id,))
+                    conn.commit()
                     print("Collection deleted!")
                     return
-    conn.commit()
 
 
 def browse_collections(conn, user_id) -> None:
