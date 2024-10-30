@@ -367,9 +367,15 @@ def modify_collection(conn, user_id, collection_id) -> None:
 
     with conn.cursor() as curs:
         while True:
-            # TODO: Display movies in collection
+            curs.execute("SELECT ic.movieid, title, length FROM incollection AS ic LEFT JOIN movie ON (ic.movieid = movie.movieid) WHERE ic.collectionid = %s ORDER BY title", (collection_id,))
+            results = curs.fetchall()
 
-            print("What would you like to do?")
+            print("\nMovies in collection: ")
+            for i in range(0, len(results)):
+                result = results[i]
+                print("%d - %s (%s min) " % ((i,) + result[1:]))
+
+            print("\nWhat would you like to do?")
             action = int(input_utils.get_input_matching("1 - exit to main menu\n2 - watch all movies\n3 - remove a movie\n4 - add a movie \n5 - modify name of collection\n6 - delete collection\n", regex="^[123456]"))
             match action:
                 case 1:
@@ -379,8 +385,13 @@ def modify_collection(conn, user_id, collection_id) -> None:
                     conn.commit()
                     print("Watched all movies!")
                 case 3:
-                    # TODO: Implement movie removal
-                    pass
+                    selected_movie = int(input_utils.get_input_matching("Select a movie above to remove: ", regex="^(?:\d+)$"))
+                    if selected_movie >= 0 and selected_movie < len(results):
+                        curs.execute(remove_movie_query, (results[selected_movie][0], collection_id))
+                        conn.commit()
+                        print("Movie removed!")
+                    else:
+                        print("Not a movie in the collection.")
                 case 4:
                     movie_id = movie_funcs.browse_movies(conn)
                     if movie_id == -1:
@@ -442,12 +453,16 @@ def browse_collections(conn, user_id) -> None:
             print("\nFound %s collection(s)" % len(results))
             for i in range(0, len(results)):
                 result = results[i]
-                minutes = int(result[-1])
-                hours = math.floor(minutes / 60)
-                minutes %= 60
+                if result[-1] != None:
+                    minutes = int(result[-1])
+                    hours = math.floor(minutes / 60)
+                    minutes %= 60
+                else:
+                    minutes = 0
+                    hours = 0
                 print("%d - %s: %s Movies (%s:%s hrs:min) " % ((i,) + result[1:-1] + (hours,) + (minutes,)))
 
-            user_input = input_utils.get_input_matching("Select a collection number to view it or 'e' to return to menu\n", regex='^(?:\d+|[e])$')
+            user_input = input_utils.get_input_matching("\nSelect a collection number to view it or 'e' to return to menu\n", regex='^(?:\d+|[e])$')
 
             if user_input == 'e':
                 return -1
