@@ -201,7 +201,7 @@ def unfollow_user(conn, userid):
 
 def view_following(conn, userid):
     """
-    Displays 10 other users that the current user follows at a time and gives 
+    Displays 10 other users that the current user follows at a time and gives
     the option to either return to following submenu, view more users, or unfollow a listed user
 
     :param conn: Connection to database
@@ -265,7 +265,7 @@ def view_following(conn, userid):
                 print("\nNot following anyone!")
                 break
         print("\nBack to manage following submenu!")
-        
+
     conn.commit()
 
 
@@ -291,16 +291,13 @@ def following_menu(conn, userid):
             # view who you follow
             case "4":
                 view_following(conn, userid)
-        
+
     print("Back to menu!")
-    
-#This whole function does work correctly
+
+
 def create_collection(conn, user_id) -> None:
     """
-    Creates a new collection for the user and puts the new collection
-    in the movie collection table
-
-    modifying the collection and listing the collection are not in this method
+    Creates a new empty collection for the user.
 
     :param conn: The connection to the database to execute SQL statements
     :param user_id: The ID of the user for their movie collection
@@ -328,7 +325,7 @@ def create_collection(conn, user_id) -> None:
         if decision == 1:
             collection_name = input_utils.get_input_matching("What would you like to name your new collection?\n")
             curs.execute("INSERT INTO moviecollection (name, madeby) VALUES (%s, %s)", (collection_name, user_id))
-            
+
             curs.execute("SELECT name FROM moviecollection WHERE madeby = %s", (user_id,))
             collection_name = curs.fetchall()
 
@@ -374,7 +371,7 @@ def create_collection(conn, user_id) -> None:
 
 def modify_collection(conn, user_id) -> None:
     """
-    Modify a current collection that is in the incollection table 
+    Modify a current collection that is in the incollection table
 
     :param conn: The connection to the database
     :param user_id: The ID of the user
@@ -388,7 +385,7 @@ def modify_collection(conn, user_id) -> None:
     """
     # A query to remove a movie from a collection
     remove_movie_query = """
-    DELETE FROM incollection 
+    DELETE FROM incollection
     WHERE movieid = %s AND collectionid = %s
     """
     # A query to add a movie into a collection
@@ -398,7 +395,7 @@ def modify_collection(conn, user_id) -> None:
     """
     # Deletes a collection from the table
     delete_moviecollection_query = """
-    DELETE FROM moviecollection 
+    DELETE FROM moviecollection
     WHERE collectionid = %s
     """
     # Deletes all movie IDs associated with the collection ID
@@ -414,7 +411,6 @@ def modify_collection(conn, user_id) -> None:
     WHERE collectionid = %s
     """
 
-    
     collection_id = ""
     movie_id = ""
     with conn.cursor() as curs:
@@ -431,8 +427,6 @@ def modify_collection(conn, user_id) -> None:
             print(f"Not a valid collection")
             return
         collection_id = collection_id_list[index][0]
-
-
 
         # Start of Actions
         print("what action would you like to do?")
@@ -470,6 +464,7 @@ def modify_collection(conn, user_id) -> None:
     conn.commit()
     return
 
+
 def browse_collections(conn, user_id) -> None:
     """
     A different version to print all information of a users collection/
@@ -480,8 +475,8 @@ def browse_collections(conn, user_id) -> None:
     """
      # A Query to get the collection ID for a certain User ID
     get_collections_asc_query = """
-    SELECT collectionid FROM moviecollection as mc 
-    WHERE mc.madeby = %s 
+    SELECT collectionid FROM moviecollection as mc
+    WHERE mc.madeby = %s
     ORDER BY name ASC
     """
     # A Query to get the name of the collection to be displayed
@@ -505,18 +500,18 @@ def browse_collections(conn, user_id) -> None:
     #
     #  get_collections_query = """
     # SELECT mc.collectionid, mc.madeby,
-    # (SELECT COUNT(ic.movieid) FROM incollection AS ic 
-    # WHERE ic.collectionid = mc.collectionid) AS movie_count, 
+    # (SELECT COUNT(ic.movieid) FROM incollection AS ic
+    # WHERE ic.collectionid = mc.collectionid) AS movie_count,
     # (SELECT SUM(m.length) FROM movie as m
     # WHERE m.movieid in (
     # SELECT movieid FROM incollection AS ic
     # WHERE ic.collectionid = mc.collectionid
-    # )) AS total_length 
+    # )) AS total_length
     # FROM moviecollection AS mc
     # WHERE mc.madeby = %s
     # ORDER BY name ASC
     # """ #
-  
+
     # collection_id = ""
     # with conn.cursor() as curs:
     #     curs.execute(get_collections_query, (user_id,))
@@ -537,8 +532,6 @@ def browse_collections(conn, user_id) -> None:
     #                 print(f"Total length of all movies: {total_hours}:{total_minutes}")
     #             else:
     #                 pass
-
-
 
     collection_id = ""
     with conn.cursor() as curs:
@@ -569,4 +562,3 @@ def browse_collections(conn, user_id) -> None:
             #print a formated string of each collection
             print(f"Name of collection: {collection_name}\n\tTotal number of movies {num_movie}\n\tTotal length of all movies in collection: {movie_length_hours}:{movie_length_mins}")
     conn.commit()
-    return
