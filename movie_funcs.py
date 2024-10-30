@@ -244,3 +244,64 @@ def browse_movies(conn) -> int:
                         sort_param.order += 1
                         # wrap around sort orders
                         sort_param.order %= 3
+
+
+def rate_movie(conn, user_id, movie_id):
+    """
+    Assigns a movie a (0-5 star) rating given by a user.
+
+    :param conn: Connection to the database.
+    :param user_id: The ID of the user rating a movie.
+    :param movie_id: The ID of the movie being rated.
+    """
+
+    rating = int(input_utils.get_input_matching("Enter a rating (0-5): ", regex="^[0-5]$"))
+
+    with conn.cursor() as curs:
+
+        # Check if the user already rated this movie
+        curs.execute("SELECT rating FROM rated WHERE userid = %s AND movieid = %s", (user_id, movie_id))
+        existing_rating = curs.fetchone()
+
+        if existing_rating:
+            # If the user has already rated this movie, update their rating
+            curs.execute("UPDATE rated SET rating = %s WHERE userid = %s AND movieid = %s", (rating, user_id, movie_id))
+            print(f"Updated your rating for this movie to {rating} stars!")
+        else:
+            # Otherwise, assign the movie a new rating
+            curs.execute("INSERT INTO rated (userid, movieid, rating) VALUES (%s, %s, %s)", (user_id, movie_id, rating))
+            print(f"You gave this movie a {rating} star rating!")
+
+        conn.commit()
+
+        return
+
+
+def watch_movie(conn, user_id, movie_id):
+    """
+    Allows the user to watch a movie and record when 
+    they started and stopped watching.
+
+    :param conn: Connection to the database.
+    :param user_id: The ID of the user watching a movie.
+    :param movie_id: The ID of the movie being watched.
+    """
+
+    date_watched = datetime.datetime.now()
+
+    with conn.cursor() as curs:
+
+        # Get the movie's length
+        curs.execute("SELECT length FROM movie WHERE movieid = %s", (movie_id,))
+        movie_length = curs.fetchone()[0]
+
+        curs.execute("INSERT INTO watched (userid, movieid, dateTime, watchDuration) VALUES (%s, %s, %s, %s)", 
+                     (user_id, movie_id, date_watched, movie_length))
+
+        conn.commit()
+
+    date_and_time = date_watched.strftime("%m/%d/%Y at %I:%M %p")
+
+    print(f"You watched this movie on {date_and_time} for {movie_length} minutes!")
+
+    return
