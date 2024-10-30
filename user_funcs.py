@@ -117,7 +117,7 @@ def login(conn) -> tuple[str, int]:
                 return results[0]
 
             print("Username or password incorrect!")
-def create_collection(conn, user_ID) -> None:
+def create_collection(conn, user_id) -> None:
     """
     creates a new collection for the user and puts the new collection
     in the movie collection table
