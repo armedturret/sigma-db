@@ -117,7 +117,6 @@ def login(conn) -> tuple[str, int]:
                 return results[0]
 
             print("Username or password incorrect!")
-#THis whole function does work correctly
 def create_collection(conn, user_ID) -> None:
     """
     creates a new collection for the user and puts the new collection
