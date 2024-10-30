@@ -316,20 +316,15 @@ def create_collection(conn, user_id) -> None:
     conn.commit()
 
 
-def modify_collection(conn, user_id) -> None:
+def modify_collection(conn, user_id, collection_id) -> None:
     """
-    Modify a current collection that is in the incollection table
+    Modify a collection or view movies in it
 
     :param conn: The connection to the database
     :param user_id: The ID of the user
-    :param movie_id: The ID of the current movie
+    :param collection_id: The ID of the collection
     """
-    # A Query to get the collection ID for a certain User ID
-    get_collections_query = """
-    SELECT collectionid FROM moviecollection AS mc
-    WHERE mc.madeby = %s
-    ORDER BY collectionid ASC
-    """
+
     # A query to remove a movie from a collection
     remove_movie_query = """
     DELETE FROM incollection
@@ -345,6 +340,7 @@ def modify_collection(conn, user_id) -> None:
     DELETE FROM moviecollection
     WHERE collectionid = %s
     """
+
     # Deletes all movie IDs associated with the collection ID
     delete_all_movie_query = """
     DELETE FROM incollection
@@ -358,58 +354,44 @@ def modify_collection(conn, user_id) -> None:
     WHERE collectionid = %s
     """
 
-    collection_id = ""
-    movie_id = ""
     with conn.cursor() as curs:
-        action = ""
-        curs.execute(get_collections_query, (user_id,))
-        collection_id_list = curs.fetchall()
-        new_collection_list = []
-        for id in range(0, len(collection_id_list)):
-            new_collection_list.append(collection_id_list[id][0])
-        # User Select which collection they want to modify based off of Index
-        print(f"Here are all of the collections for the user\n{new_collection_list}")
-        index = int(input_utils.get_input_matching("Please input a number that is within the index of the list of collection IDs for the collection you want: "))
-        if index >= len(new_collection_list) or index < 0:
-            print(f"Not a valid collection")
-            return
-        collection_id = collection_id_list[index][0]
+        while True:
+            # TODO: Display movies in collection
 
-        # Start of Actions
-        print("what action would you like to do?")
-        action = int(input_utils.get_input_matching("1 - remove a movie\n2 - add a movie \n3 - modify name of collection\n4 - delete collection\n5 - exit function: "))
-        if action == 1 or action == 2 or action == 3 or action == 4 or action == 5:
-             match action:
-                # action for removing a movie
+            print("What would you like to do?")
+            action = int(input_utils.get_input_matching("1 - exit to main menu\n2 - watch all movies\n3 - remove a movie\n4 - add a movie \n5 - modify name of collection\n6 - delete collection\n", regex="^[123456]"))
+            match action:
                 case 1:
-                    movie_id = movie_funcs.browse_movies(conn)
-                    if movie_id == -1:
-                        print(f"Couldn't find movie")
-                        return
-                    curs.execute(remove_movie_query, (movie_id, collection_id_list[index][0]))
-
-                    # action for adding a movie
+                    return
                 case 2:
+                    # TODO: Implement movie viewing
+                    pass
+                case 3:
+                    # TODO: Implement movie removal
+                    pass
+                case 4:
                     movie_id = movie_funcs.browse_movies(conn)
                     if movie_id == -1:
-                        print(f"Couldn't find movie")
-                        return
-                    curs.execute(add_movie_query, (movie_id, collection_id_list[index][0]))
-
-                    # action to rename a collection
-                case 3:
-                    new_name = input_utils.get_input_matching("what would you like to name your collection: ")
-                    curs.execute(change_name_query, (new_name, collection_id_list[index],))
-
-                    # action to delete a collection
-                case 4:
-
-                    curs.execute(delete_all_movie_query, (collection_id_list[index],))
-                    curs.execute(delete_moviecollection_query, (collection_id_list[index],))
+                        print("No movie added!")
+                    else:
+                        # check if the movie is already in the collection
+                        curs.execute("SELECT COUNT(*) FROM incollection WHERE movieid = %s AND collectionid = %s", (movie_id, collection_id))
+                        if int(curs.fetchone()[0]) > 0:
+                            print("Movie already in collection!")
+                        else:
+                            curs.execute(add_movie_query, (movie_id, collection_id))
+                            print("Movie added!")
+                            curs.commit()
                 case 5:
+                    new_name = input_utils.get_input_matching("What would you like to name your collection: ")
+                    curs.execute(change_name_query, (new_name, collection_id))
+
+                case 6:
+                    curs.execute(delete_all_movie_query, (collection_id,))
+                    curs.execute(delete_moviecollection_query, (collection_id,))
+                    print("Collection deleted!")
                     return
     conn.commit()
-    return
 
 
 def browse_collections(conn, user_id) -> None:
@@ -429,7 +411,7 @@ def browse_collections(conn, user_id) -> None:
     ) AS movie_count,
     (
         SELECT SUM(length) FROM movie as m
-        WHERE m.movieid in 
+        WHERE m.movieid in
         (
             SELECT movieid FROM incollection AS ic
             WHERE ic.collectionid = mc.collectionid
@@ -444,7 +426,7 @@ def browse_collections(conn, user_id) -> None:
         while True:
             curs.execute(get_collections_query, (user_id,))
             results = curs.fetchall()
-            
+
             print("\nFound %s collection(s)" % len(results))
             for i in range(0, len(results)):
                 result = results[i]

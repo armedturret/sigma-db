@@ -107,7 +107,9 @@ def main():
                         case "4":
                             user_funcs.create_collection(conn, userid)
                         case "5":
-                            user_funcs.browse_collections(conn, userid)
+                            collection_id = user_funcs.browse_collections(conn, userid)
+                            if collection_id != -1:
+                                user_funcs.modify_collection(conn, userid, collection_id)
 
                 print("Goodbye!")
 
