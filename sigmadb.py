@@ -91,7 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - modify collection\n6 - display collections", regex='[123456]')
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - modify collection\n6 - display collections\n", regex='[123456]')
 
                     match action:
                         case "2":

@@ -302,70 +302,16 @@ def create_collection(conn, user_id) -> None:
     :param conn: The connection to the database to execute SQL statements
     :param user_id: The ID of the user for their movie collection
     """
-    #A query that will insert the movie_id the user selected into the incollection table with the associated collection_id
-    add_movie_collection_query = """
-    INSERT INTO incollection (movieid, collectionid)
-    VALUES(%s, %s)
-    """
 
-    #Query that gets the last collection ID in the moviecollection table
-    collection_id_query = """
-    Select collectionid FROM moviecollection AS mc
-    ORDER BY mc.collectionid DESC LIMIT 1
-    """
-
-    collection_id = 0
     collection_name = ""
-    loop_state = True
     with conn.cursor() as curs:
         user_id = str(user_id)
-        #Loop that prompts user for information
-        decision = int(input_utils.get_input_matching("\n1 - Create an empty collection \n2 - Create a new collection that will be filled with movies: ", regex='[12]'))
         #Creates an empty collection
-        if decision == 1:
-            collection_name = input_utils.get_input_matching("What would you like to name your new collection?\n")
-            curs.execute("INSERT INTO moviecollection (name, madeby) VALUES (%s, %s)", (collection_name, user_id))
+        collection_name = input_utils.get_input_matching("What would you like to name your new collection?\n")
+        curs.execute("INSERT INTO moviecollection (name, madeby) VALUES (%s, %s)", (collection_name, user_id))
 
-            curs.execute("SELECT name FROM moviecollection WHERE madeby = %s", (user_id,))
-            collection_name = curs.fetchall()
+    print("Collection created!")
 
-        elif decision == 2:
-            #Insert new collection with new name
-            collection_Name = input_utils.get_input_matching("What would you like to name your new collection?\n")
-            curs.execute("INSERT INTO moviecollection (name, madeby) VALUES (%s, %s)", (collection_name, user_id))
-            #gets the id of the newly add collection
-            curs.execute(collection_id_query, ())
-            collection_id_results = int(curs.fetchone()[0])
-            collection_id = str(collection_id_results)
-            movie_id = 0
-            #adding movies to the collection
-            while loop_state:
-                #adding movies that are in the database to a collection when making a new collection
-                break_loop = 0
-                print("what movie would you like to add?")
-                movie_id = movie_funcs.browse_movies(conn)
-                if movie_id == -1:
-                    print("Was not able to get movieID to add to collection.\nWill Exit...")
-                    curs.execute("DELETE FROM moviecollection WHERE name = %s AND madeby = %s", (collection_name, user_id,))
-                    return
-                else:
-                    movie_id = str(movie_id)
-                    curs.execute(add_movie_collection_query, (movie_id, collection_id))
-                break_loop = int(input_utils.get_input_matching("\n0 - Continue adding movies\n1 - Stop adding movies: "))
-                if break_loop == 0:
-                    pass
-                elif break_loop == 1:
-                    break
-                else:
-                    while True:
-                        print(f"Invalid Input of {break_loop}, please enter a valid input")
-                        break_loop = int(input_utils.get_input_matching("""\n0 - Continue adding movies\n1 - Stop adding movies: """))
-                        if break_loop == "0" or "1":
-                            break
-                if break_loop == 0:
-                    pass
-                else:
-                    break
     conn.commit()
 
 
