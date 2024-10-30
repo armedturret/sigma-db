@@ -245,10 +245,6 @@ def modify_collection(conn, user_ID) -> None:
     WHERE collectionid = %s
     """
 
-
-
-
-
     
     collection_ID = ""
     movie_ID = movie_funcs.browse_movies(conn)
@@ -259,51 +255,44 @@ def modify_collection(conn, user_ID) -> None:
         action = ""
         curs.execute(query, (user_ID,))
         collection_ID_list = curs.fetchall()
+        # User Select which collection they want to modify based off of Index
         print(f"Here are all of the collections for the user\n{collection_ID_list}")
         index = int(input("Please input a number that is within the index of the list of collection IDs for the collection you want: "))
         if index >= len(collection_ID_list) or index < 0:
             print(f"Invalid index, ending function...")
             return
-        
 
-
+        # Start of Actions
         print("what action would you like to do?")
-        action = int(input_utils.get_input_matching("1 - remove a movie\n2 - add a movie \n3 - modify name of collection\n4 - delete collection\n5 - exit function\n "))
-        if action != 1 or action != 2 or action != 3 or action != 4 or action != 5:
-            while True:
-                print("action is not the correct input. Please input the right number")
-                action = int(input_utils.get_input_matching("1 - remove a movie\n2 - add a movie\n3 - modify name of collection\n4 - delete collection\n5 - exit function: "))
-                if action == 1 or action == 2 or action == 3 or action == 4 or action == 5:
-                    break
-        else:
-            match action:
+        action = int(input_utils.get_input_matching("1 - remove a movie\n2 - add a movie \n3 - modify name of collection\n4 - delete collection\n5 - exit function: "))
+        if action == 1 or action == 2 or action == 3 or action == 4 or action == 5:
+             match action:
                 # action for removing a movie
+                # This works
                 case 1:
                     curs.execute(remove_movie_query, (movie_ID, collection_ID_list[index][0]))
+
                     # action for adding a movie
+                    # This does work
                 case 2:
                     curs.execute(add_movie_query, (movie_ID, collection_ID_list[index][0]))
+
                     # action to rename a collection
                     # Fucntionality works
                 case 3:
                     new_name = input("what would you like to name your collection: ")
                     curs.execute(change_name_query, (new_name, collection_ID_list[index],))
+
                     # action to delete a collection
                 case 4:
                     #This does work
+
                     curs.execute(delete_all_movie_query, (collection_ID_list[index],))
                     curs.execute(delete_moviecollection_query, (collection_ID_list[index],))
                 case 5:
                     return
     conn.commit()
     return
-
-
-
-
-
-
-
 
 def browse_collections(conn, user_ID) -> None:
     """
