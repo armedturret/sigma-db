@@ -91,11 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-<<<<<<< HEAD
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n4 - create new collection\n5 - modify collection\n6 - display collection\n> ", regex="[12456]")
-=======
                     action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n4 - create collection\n5 - modify collection\n6 - display collections", regex='[12456]')
->>>>>>> c136fabd6b2397bea99bfb8e06c38ab0977b0944
 
                     match action:
                         case "2":
