@@ -5,6 +5,7 @@ Functions to handle queries related to users
 """
 
 from datetime import datetime
+import math
 
 import input_utils
 import hashlib
@@ -413,98 +414,52 @@ def modify_collection(conn, user_id) -> None:
 
 def browse_collections(conn, user_id) -> None:
     """
-    A different version to print all information of a users collection/
-    list of collections
+    Displays all the user's collections
 
     :param conn: Connection to the database
     :param user_id: The ID of the user
+    :return: The collection id to modify or -1 if none selected
     """
-     # A Query to get the collection ID for a certain User ID
-    get_collections_asc_query = """
-    SELECT collectionid FROM moviecollection as mc
+
+    get_collections_query = """
+    SELECT collectionid, name,
+    (
+        SELECT COUNT(movieid) FROM incollection AS ic
+        WHERE ic.collectionid = mc.collectionid
+    ) AS movie_count,
+    (
+        SELECT SUM(length) FROM movie as m
+        WHERE m.movieid in 
+        (
+            SELECT movieid FROM incollection AS ic
+            WHERE ic.collectionid = mc.collectionid
+        )
+    ) AS total_length
+    FROM moviecollection AS mc
     WHERE mc.madeby = %s
     ORDER BY name ASC
     """
-    # A Query to get the name of the collection to be displayed
-    get_name_query = """
-    SELECT name FROM moviecollection
-    WHERE collectionid = %s
-    """
-    # A query to copunt the number of movies in a collection
-    count_movie_query = """
-    SELECT COUNT(movieid) FROM incollection
-    WHERE collectionid = %s
-    """
-    # A query to get all lengths of all movies in a collection
-    get_length_movie_query = """
-    SELECT SUM(length) FROM movie as m
-    WHERE m.movieid in (
-    SELECT movieid FROM incollection
-    WHERE collectionid = %s
-    )
-    """
-    #
-    #  get_collections_query = """
-    # SELECT mc.collectionid, mc.madeby,
-    # (SELECT COUNT(ic.movieid) FROM incollection AS ic
-    # WHERE ic.collectionid = mc.collectionid) AS movie_count,
-    # (SELECT SUM(m.length) FROM movie as m
-    # WHERE m.movieid in (
-    # SELECT movieid FROM incollection AS ic
-    # WHERE ic.collectionid = mc.collectionid
-    # )) AS total_length
-    # FROM moviecollection AS mc
-    # WHERE mc.madeby = %s
-    # ORDER BY name ASC
-    # """ #
 
-    # collection_id = ""
-    # with conn.cursor() as curs:
-    #     curs.execute(get_collections_query, (user_id,))
-    #     collection_display_list = curs.fetchall()
-    #     for index in range(0, len(collection_display_list)):
-    #         current_collection = collection_display_list[index]
-    #         for info in range(0, len(current_collection)):
-    #             if info == 1:
-    #                 curs.execute(get_name_query, (collection_display_list[info],))
-    #                 collection_name = curs.fetchone()
-    #                 print(f"Name of collection: {collection_name}")
-    #             elif info == 2:
-    #                 print(f"Total number of movies: {current_collection[info]}")
-    #             elif info == 3:
-    #                 total_mov_length = current_collection[info]
-    #                 total_hours = total_mov_length//60
-    #                 total_minutes = total_mov_length%60
-    #                 print(f"Total length of all movies: {total_hours}:{total_minutes}")
-    #             else:
-    #                 pass
-
-    collection_id = ""
     with conn.cursor() as curs:
-        curs.execute( get_collections_asc_query, (user_id,))
-        #Get list of collection IDs for a user and iterate through them
-        collection_id_list = curs.fetchall()
-        #print(collection_id_list)
-        for i in range (0, len(collection_id_list)):
+        while True:
+            curs.execute(get_collections_query, (user_id,))
+            results = curs.fetchall()
+            
+            print("\nFound %s collection(s)" % len(results))
+            for i in range(0, len(results)):
+                result = results[i]
+                minutes = int(result[-1])
+                hours = math.floor(minutes / 60)
+                minutes %= 60
+                print("%d - %s: %s Movies (%s:%s hrs:min) " % ((i,) + result[1:-1] + (hours,) + (minutes,)))
 
-            #Get name of current collection ID
-            collection_id = int(collection_id_list[i][0])
-            curs.execute(get_name_query, (collection_id,))
-            collection_name = curs.fetchone()[0]
+            user_input = input_utils.get_input_matching("Select a collection number to view it or 'e' to return to menu\n", regex='^(?:\d+|[e])$')
 
-            #Get number of movies for current collection ID
-            curs.execute(count_movie_query, (collection_id,))
-            num_movie = curs.fetchone()[0]
-
-            #Get total length of all movies in the collection (in minutes)
-            curs.execute(get_length_movie_query, (collection_id,))
-            total_movie_length = curs.fetchone()[0]
-            if total_movie_length != None:
-                movie_length_hours = total_movie_length//60
-                movie_length_mins = total_movie_length%60
+            if user_input == 'e':
+                return -1
+            elif int(user_input) >= 0 and int(user_input) < len(results):
+                return results[int(user_input)][0]
             else:
-                movie_length_hours = 0
-                movie_length_mins = 0
-            #print a formated string of each collection
-            print(f"Name of collection: {collection_name}\n\tTotal number of movies {num_movie}\n\tTotal length of all movies in collection: {movie_length_hours}:{movie_length_mins}")
+                print("Not a valid id!")
+
     conn.commit()
