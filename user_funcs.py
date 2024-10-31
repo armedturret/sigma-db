@@ -117,10 +117,11 @@ def login(conn) -> tuple[str, int]:
             if len(results) == 1:
                 # update last login time to now
                 curs.execute("UPDATE \"user\" SET lastaccessdate = %s WHERE userid = %s", (datetime.now(), (results[0][1])))
+                conn.commit()
+
                 return results[0]
 
             print("Username or password incorrect!")
-    conn.commit()
 
 
 def follow_user(conn, userid):
