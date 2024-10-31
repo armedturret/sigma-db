@@ -224,7 +224,7 @@ def browse_movies(conn) -> int:
             skip_query = False
 
             print("\nFound %s result(s)" % len(results))
-            input_text = "\nSorted by " + ", ".join([order.display_text() for order in sort_parameters]) + "\nSelect a movie by its number to view more actions, 'e' to go back to the menu, or any of the sort actions above\n> "
+            input_text = "\nSorted by " + ", ".join([order.display_text() for order in sort_parameters]) + "\nSelect a movie by its number, 'e' to go back to the menu, or enter of the sort options above\n> "
             user_input = input_utils.get_input_matching(input_text, regex='^(?:\d+|[etrsg])$')
 
             if user_input.isdigit():

@@ -91,23 +91,26 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n", regex="[123]")
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n", regex='[123456]')
 
                     match action:
                         case "2":
                             selected_movie_id = movie_funcs.browse_movies(conn)
-                            if selected_movie_id == -1:
-                                pass
-                            else:
+                            if selected_movie_id != -1:
                                 watch_or_rate = input_utils.get_input_matching("1 - watch movie\n2 - rate movie\n> ", regex="[12]")
                                 if watch_or_rate == "1":
                                     movie_funcs.watch_movie(conn, userid, selected_movie_id)
-                                if watch_or_rate == "2":
+                                elif watch_or_rate == "2":
                                     movie_funcs.rate_movie(conn, userid, selected_movie_id)
-                                else:
-                                    pass
                         case "3":
                             user_funcs.following_menu(conn, userid)
+                        case "4":
+                            user_funcs.create_collection(conn, userid)
+                        case "5":
+                            collection_id = user_funcs.browse_collections(conn, userid)
+                            if collection_id != -1:
+                                user_funcs.modify_collection(conn, userid, collection_id)
+
                 print("Goodbye!")
 
     except KeyboardInterrupt:

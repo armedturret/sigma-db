@@ -5,9 +5,11 @@ Functions to handle queries related to users
 """
 
 from datetime import datetime
+import math
 
 import input_utils
 import hashlib
+import movie_funcs
 
 MAX_INPUT_LEN = 255
 
@@ -200,7 +202,7 @@ def unfollow_user(conn, userid):
 
 def view_following(conn, userid):
     """
-    Displays 10 other users that the current user follows at a time and gives 
+    Displays 10 other users that the current user follows at a time and gives
     the option to either return to following submenu, view more users, or unfollow a listed user
 
     :param conn: Connection to database
@@ -264,7 +266,7 @@ def view_following(conn, userid):
                 print("\nNot following anyone!")
                 break
         print("\nBack to manage following submenu!")
-        
+
     conn.commit()
 
 
@@ -290,5 +292,183 @@ def following_menu(conn, userid):
             # view who you follow
             case "4":
                 view_following(conn, userid)
-        
+
     print("Back to menu!")
+
+
+def create_collection(conn, user_id) -> None:
+    """
+    Creates a new empty collection for the user.
+
+    :param conn: The connection to the database to execute SQL statements
+    :param user_id: The ID of the user for their movie collection
+    """
+
+    collection_name = ""
+    with conn.cursor() as curs:
+        user_id = str(user_id)
+        #Creates an empty collection
+        collection_name = input_utils.get_input_matching("What would you like to name your new collection?\n")
+        curs.execute("INSERT INTO moviecollection (name, madeby) VALUES (%s, %s)", (collection_name, user_id))
+
+    print("Collection created!")
+
+    conn.commit()
+
+
+def modify_collection(conn, user_id, collection_id) -> None:
+    """
+    Modify a collection or view movies in it
+
+    :param conn: The connection to the database
+    :param user_id: The ID of the user
+    :param collection_id: The ID of the collection
+    """
+
+    # A query to remove a movie from a collection
+    remove_movie_query = """
+    DELETE FROM incollection
+    WHERE movieid = %s AND collectionid = %s
+    """
+    # A query to add a movie into a collection
+    add_movie_query = """
+    INSERT INTO incollection (movieid, collectionid)
+    VALUES (%s, %s)
+    """
+    # Deletes a collection from the table
+    delete_moviecollection_query = """
+    DELETE FROM moviecollection
+    WHERE collectionid = %s
+    """
+
+    # Deletes all movie IDs associated with the collection ID
+    delete_all_movie_query = """
+    DELETE FROM incollection
+    WHERE collectionid = %s
+    """
+
+    # Changes the name of the collection
+    change_name_query = """
+    UPDATE moviecollection
+    SET name = %s
+    WHERE collectionid = %s
+    """
+
+    watch_collection_query = """
+    WITH viewing(userid, datetime) AS (VALUES (%s, %s))
+    INSERT INTO watched (userid, movieid, datetime, watchduration)
+    SELECT viewing.userid, ic.movieid, viewing.datetime, m.length
+    FROM incollection AS ic
+    LEFT JOIN movie AS m
+    ON (m.movieid = ic.movieid)
+    CROSS JOIN viewing
+    WHERE ic.collectionid = %s
+    """
+
+    with conn.cursor() as curs:
+        while True:
+            curs.execute("SELECT ic.movieid, title, length FROM incollection AS ic LEFT JOIN movie ON (ic.movieid = movie.movieid) WHERE ic.collectionid = %s ORDER BY title", (collection_id,))
+            results = curs.fetchall()
+
+            print("\nMovies in collection: ")
+            for i in range(0, len(results)):
+                result = results[i]
+                print("%d - %s (%s min) " % ((i,) + result[1:]))
+
+            print("\nWhat would you like to do?")
+            action = int(input_utils.get_input_matching("1 - exit to main menu\n2 - watch all movies\n3 - remove a movie\n4 - add a movie \n5 - modify name of collection\n6 - delete collection\n", regex="^[123456]"))
+            match action:
+                case 1:
+                    return
+                case 2:
+                    curs.execute(watch_collection_query, (user_id, datetime.now(), collection_id,))
+                    conn.commit()
+                    print("Watched all movies!")
+                case 3:
+                    selected_movie = int(input_utils.get_input_matching("Select a movie above to remove: ", regex="^(?:\d+)$"))
+                    if selected_movie >= 0 and selected_movie < len(results):
+                        curs.execute(remove_movie_query, (results[selected_movie][0], collection_id))
+                        conn.commit()
+                        print("Movie removed!")
+                    else:
+                        print("Not a movie in the collection.")
+                case 4:
+                    movie_id = movie_funcs.browse_movies(conn)
+                    if movie_id == -1:
+                        print("No movie added!")
+                    else:
+                        # check if the movie is already in the collection
+                        curs.execute("SELECT COUNT(*) FROM incollection WHERE movieid = %s AND collectionid = %s", (movie_id, collection_id))
+                        if int(curs.fetchone()[0]) > 0:
+                            print("Movie already in collection!")
+                        else:
+                            curs.execute(add_movie_query, (movie_id, collection_id))
+                            print("Movie added!")
+                    conn.commit()
+                case 5:
+                    new_name = input_utils.get_input_matching("What would you like to name your collection: ")
+                    curs.execute(change_name_query, (new_name, collection_id))
+                    conn.commit()
+                case 6:
+                    curs.execute(delete_all_movie_query, (collection_id,))
+                    curs.execute(delete_moviecollection_query, (collection_id,))
+                    conn.commit()
+                    print("Collection deleted!")
+                    return
+
+
+def browse_collections(conn, user_id) -> None:
+    """
+    Displays all the user's collections
+
+    :param conn: Connection to the database
+    :param user_id: The ID of the user
+    :return: The collection id to modify or -1 if none selected
+    """
+
+    get_collections_query = """
+    SELECT collectionid, name,
+    (
+        SELECT COUNT(movieid) FROM incollection AS ic
+        WHERE ic.collectionid = mc.collectionid
+    ) AS movie_count,
+    (
+        SELECT SUM(length) FROM movie as m
+        WHERE m.movieid in
+        (
+            SELECT movieid FROM incollection AS ic
+            WHERE ic.collectionid = mc.collectionid
+        )
+    ) AS total_length
+    FROM moviecollection AS mc
+    WHERE mc.madeby = %s
+    ORDER BY name ASC
+    """
+
+    with conn.cursor() as curs:
+        while True:
+            curs.execute(get_collections_query, (user_id,))
+            results = curs.fetchall()
+
+            print("\nFound %s collection(s)" % len(results))
+            for i in range(0, len(results)):
+                result = results[i]
+                if result[-1] != None:
+                    minutes = int(result[-1])
+                    hours = math.floor(minutes / 60)
+                    minutes %= 60
+                else:
+                    minutes = 0
+                    hours = 0
+                print("%d - %s: %s Movies (%s:%s hrs:min) " % ((i,) + result[1:-1] + (hours,) + (minutes,)))
+
+            user_input = input_utils.get_input_matching("\nSelect a collection number to view it or 'e' to return to menu\n", regex='^(?:\d+|[e])$')
+
+            if user_input == 'e':
+                return -1
+            elif int(user_input) >= 0 and int(user_input) < len(results):
+                return results[int(user_input)][0]
+            else:
+                print("Not a valid id!")
+
+    conn.commit()
