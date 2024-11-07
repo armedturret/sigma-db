@@ -111,7 +111,7 @@ def main():
                             if collection_id != -1:
                                 user_funcs.modify_collection(conn, userid, collection_id)
                         case "6":
-                            select_recommended = input_utils.get_input_matching("1 - View most popular (last 90 days)\n2 - View most popular among followers\n3 - View top releases of the month\n>")
+                            select_recommended = input_utils.get_input_matching("1 - View most popular (last 90 days)\n2 - View most popular among followers\n3 - View top releases of the month\n4 - For you\n>", regex='[1234]')
                             match select_recommended:
                                 case "1":
                                     movie_funcs.top_20_last_90_days(conn)
@@ -119,6 +119,8 @@ def main():
                                     movie_funcs.top_20_among_followers(conn, userid)
                                 case "3":
                                     movie_funcs.top_5_releases_of_month(conn)
+                                case "4":
+                                    movie_funcs.view_recommended(conn, userid)
 
                 print("Goodbye!")
 
