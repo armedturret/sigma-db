@@ -305,3 +305,98 @@ def watch_movie(conn, user_id, movie_id):
     print(f"You watched this movie on {date_and_time} for {movie_length} minutes!")
 
     return
+
+
+def top_20_last_90_days(conn):
+    """
+    Shows the user a list of the top 20 most popular movies in the 
+    last 90 days (rolling).
+
+    :param conn: Connection to the database.
+    """
+
+    with conn.cursor() as curs:
+
+        curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    WHERE watched.dateTime >= CURRENT_DATE - INTERVAL '90 days'
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 20
+                    """)
+        watched_count = curs.fetchall()
+
+        conn.commit()
+
+    print("Top 20 movies by total viewings (last 90 days):")
+    for i, (title,) in enumerate(watched_count, start=1):
+        print(f"{i}. {title}")
+
+    return
+
+def top_20_among_followers(conn, user_id):
+    """
+    Shows the user a list of the top 20 most popular movies 
+    among their followers.
+
+    :param conn: Connection to the database.
+    """
+
+    with conn.cursor() as curs:
+
+        curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    JOIN following ON watched.userid = following.followingid
+                    WHERE following.followerid = %s
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 20
+                    """, (user_id,))
+        watched_count = curs.fetchall()
+
+        conn.commit()
+
+    print("Top 20 movies among your followers:")
+    for i, (title,) in enumerate(watched_count, start=1):
+        print(f"{i}. {title}")
+
+    return
+
+
+def top_5_releases_of_month(conn):
+    """
+    Shows the user a list of the top 5 most popular new releases
+    of this calendar month.
+
+    :param conn: Connection to the database.
+    """
+
+    with conn.cursor() as curs:
+
+        curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    JOIN movierelease ON movie.movieid = movierelease.movieid
+                    WHERE movierelease.releasedate >= date_trunc('month', CURRENT_DATE)
+                    AND movierelease.releasedate < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 5
+                    """)
+        watched_count = curs.fetchall()
+
+        conn.commit()
+    
+    if not watched_count:
+        print("No new releases this month.")
+    else:
+        print("Top 5 new releases this month:")
+        for i, (title,) in enumerate(watched_count, start=1):
+            print(f"{i}. {title}")
+
+    return
