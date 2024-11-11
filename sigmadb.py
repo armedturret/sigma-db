@@ -116,7 +116,7 @@ def main():
                                 case "1":
                                     movie_funcs.top_20_last_90_days(conn)
                                 case "2":
-                                    print("implement later")
+                                    movie_funcs.top_20_among_followers(conn, userid)
                                 case "3":
                                     print("implement later")
 
