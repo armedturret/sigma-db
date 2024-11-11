@@ -305,3 +305,33 @@ def watch_movie(conn, user_id, movie_id):
     print(f"You watched this movie on {date_and_time} for {movie_length} minutes!")
 
     return
+
+
+def top_20_last_90_days(conn):
+    """
+    Shows the user a list of the top 20 most popular movies in the 
+    last 90 days (rolling)
+
+    :param conn: Connection to the database.
+    """
+
+    with conn.cursor() as curs:
+
+        curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    WHERE watched.dateTime >= CURRENT_DATE - INTERVAL '90 days'
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 20
+                    """)
+        watched_count = curs.fetchall()
+
+        conn.commit()
+
+    print("Top 20 movies by total viewings (last 90 days):")
+    for i, (title,) in enumerate(watched_count, start=1):
+       print(f"{i}. {title}") 
+
+    return

@@ -91,7 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n", regex='[123456]')
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n6 - see what's popular\n>", regex='[123456]')
 
                     match action:
                         case "2":
@@ -110,6 +110,15 @@ def main():
                             collection_id = user_funcs.browse_collections(conn, userid)
                             if collection_id != -1:
                                 user_funcs.modify_collection(conn, userid, collection_id)
+                        case "6":
+                            select_popular = input_utils.get_input_matching("1 - View most popular (last 90 days)\n2 - View most popular among followers\n3 - View top releases of the month\n>")
+                            match select_popular:
+                                case "1":
+                                    movie_funcs.top_20_last_90_days(conn)
+                                case "2":
+                                    print("implement later")
+                                case "3":
+                                    print("implement later")
 
                 print("Goodbye!")
 
