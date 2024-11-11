@@ -118,7 +118,7 @@ def main():
                                 case "2":
                                     movie_funcs.top_20_among_followers(conn, userid)
                                 case "3":
-                                    print("implement later")
+                                    movie_funcs.top_5_releases_of_month(conn)
 
                 print("Goodbye!")
 

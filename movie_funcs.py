@@ -365,3 +365,38 @@ def top_20_among_followers(conn, user_id):
         print(f"{i}. {title}")
 
     return
+
+
+def top_5_releases_of_month(conn):
+    """
+    Shows the user a list of the top 5 most popular new releases
+    of this calendar month.
+
+    :param conn: Connection to the database.
+    """
+
+    with conn.cursor() as curs:
+
+        curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    JOIN movierelease ON movie.movieid = movierelease.movieid
+                    WHERE movierelease.releasedate >= date_trunc('month', CURRENT_DATE)
+                    AND movierelease.releasedate < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 5
+                    """)
+        watched_count = curs.fetchall()
+
+        conn.commit()
+    
+    if not watched_count:
+        print("No new releases this month.")
+    else:
+        print("Top 5 new releases this month:")
+        for i, (title,) in enumerate(watched_count, start=1):
+            print(f"{i}. {title}")
+
+    return
