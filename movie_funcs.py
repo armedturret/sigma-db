@@ -279,7 +279,7 @@ def rate_movie(conn, user_id, movie_id):
 
 def watch_movie(conn, user_id, movie_id):
     """
-    Allows the user to watch a movie and record when 
+    Allows the user to watch a movie and record when
     they started and stopped watching.
 
     :param conn: Connection to the database.
@@ -295,7 +295,7 @@ def watch_movie(conn, user_id, movie_id):
         curs.execute("SELECT length FROM movie WHERE movieid = %s", (movie_id,))
         movie_length = curs.fetchone()[0]
 
-        curs.execute("INSERT INTO watched (userid, movieid, dateTime, watchDuration) VALUES (%s, %s, %s, %s)", 
+        curs.execute("INSERT INTO watched (userid, movieid, dateTime, watchDuration) VALUES (%s, %s, %s, %s)",
                      (user_id, movie_id, date_watched, movie_length))
 
         conn.commit()
@@ -309,7 +309,7 @@ def watch_movie(conn, user_id, movie_id):
 
 def top_20_last_90_days(conn):
     """
-    Shows the user a list of the top 20 most popular movies in the 
+    Shows the user a list of the top 20 most popular movies in the
     last 90 days (rolling).
 
     :param conn: Connection to the database.
@@ -338,7 +338,7 @@ def top_20_last_90_days(conn):
 
 def top_20_among_followers(conn, user_id):
     """
-    Shows the user a list of the top 20 most popular movies 
+    Shows the user a list of the top 20 most popular movies
     among their followers.
 
     :param conn: Connection to the database.
@@ -391,7 +391,7 @@ def top_5_releases_of_month(conn):
         watched_count = curs.fetchall()
 
         conn.commit()
-    
+
     if not watched_count:
         print("No new releases this month.")
     else:
@@ -400,3 +400,78 @@ def top_5_releases_of_month(conn):
             print(f"{i}. {title}")
 
     return
+
+
+def view_recommended(conn, user_id):
+    """
+    Shows a list of recommended films for the user.
+
+    This is a placeholder.
+    :param conn: Connection to the database
+    :param user_id: The current logged in user's ID
+    """
+
+    """
+    Recommendation algorithm:
+    Get all movies I watched
+    Get all the users that watched those movies
+    Get movies that they watched (that I haven't)
+    Get top ten movies by rating from that
+    """
+
+    for_you_query = """
+    SELECT m.title, m.length,
+    (
+        SELECT
+            AVG(rating)
+        FROM
+            "rated"
+        WHERE
+            rated.movieid = m.movieid
+    ) AS avg_rating
+    FROM movie AS m
+    WHERE m.movieid IN
+    (
+        SELECT theywatched.movieid
+        FROM watched AS theywatched
+        WHERE theywatched.userid IN
+        (
+            SELECT wewatched.userid
+            FROM watched AS wewatched
+            WHERE wewatched.movieid IN
+            (
+                SELECT iwatched.movieid
+                FROM watched AS iwatched
+                WHERE iwatched.userid = %s
+            )
+            AND wewatched.userid != %s
+        )
+        EXCEPT
+        SELECT iwatched.movieid
+        FROM watched AS iwatched
+        WHERE iwatched.userid = %s
+    )
+    ORDER BY avg_rating DESC
+    LIMIT 20
+    """
+
+    # display 'for you' page
+    with conn.cursor() as curs:
+        print("For You:")
+        curs.execute(for_you_query, (user_id, user_id, user_id))
+        results = curs.fetchall()
+
+        if results == None or len(results) == 0:
+            curs.execute("""
+                    SELECT movie.title
+                    FROM movie
+                    JOIN watched ON movie.movieid = watched.movieid
+                    WHERE watched.dateTime >= CURRENT_DATE - INTERVAL '90 days'
+                    GROUP BY movie.movieid
+                    ORDER BY COUNT(watched.movieid) DESC
+                    LIMIT 20
+                    """)
+            results = curs.fetchall()
+
+        for i in range(len(results)):
+            print(f"{i + 1}. {results[i][0]}")
