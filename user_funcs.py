@@ -480,7 +480,7 @@ def view_profile(conn, userid) -> None:
     and top ten rated movies
     
     :param conn: Connection to the database
-    :param user_id: The ID of the user
+    :param userid: The ID of the user
     :return: Nothing since it displays viewer profile.
     """
     # gets the number of collections for a user
@@ -522,10 +522,10 @@ def view_profile(conn, userid) -> None:
         print(f"Number of followers: {num_followers}")
         curs.execute(get_num_following, (userid,))
         num_following = curs.fetchone()[0]
-        print(f"Number of users following: {num_following}")
+        print(f"Number of users followed: {num_following}")
         curs.execute(ten_highest_ratings, (userid,))
         top_ten = curs.fetchall()
-        print("Top 10 rated movies in your collection: ")
+        print("Top 10 rated movies: ")
         for i in range(len(top_ten)):
             print(f"{i+1}: {top_ten[i][0]}")
     return
