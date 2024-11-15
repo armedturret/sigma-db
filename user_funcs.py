@@ -472,3 +472,59 @@ def browse_collections(conn, user_id) -> None:
                 print("Not a valid id!")
 
     conn.commit()
+
+def view_profile(conn, userid) -> None:
+    """
+    Displays a users profile information of following, number of collections
+    and top ten rated movies
+    
+    :param conn: Connection to the database
+    :param user_id: The ID of the user
+    :return: Nothing since it displays viewer profile.
+    """
+    # gets the number of collections for a user
+    get_num_collections = """
+    SELECT COUNT(collectionid) 
+    FROM moviecollection
+    WHERE madeby = %s
+    """
+
+    # get number of followers a user is following 
+    get_num_followers = """
+    SELECT COUNT(followingid)
+    FROM following AS fw
+    WHERE fw.followerid = %s
+    """
+
+    # Get number of users following a specific user
+    get_num_following = """
+    SELECT COUNT(*)
+    FROM following as fw
+    WHERE fw.followingid = %s 
+    """
+
+    # Gets the movie names of the top ten highest rated movies for the user
+    ten_highest_ratings = """
+    SELECT m.title FROM rated as r
+    LEFT JOIN movie AS m
+    ON m.movieid = r.movieid
+    WHERE r.userid = %s
+    ORDER BY r.rating DESC
+    LIMIT 10
+    """
+    with conn.cursor() as curs:
+        curs.execute(get_num_collections, (userid,))
+        num_collections = curs.fetchone()[0]
+        print(f"Number of collections: {num_collections}")
+        curs.execute(get_num_followers, (userid,))
+        num_followers = curs.fetchone()[0]
+        print(f"Number of followers: {num_followers}")
+        curs.execute(get_num_following, (userid,))
+        num_following = curs.fetchone()[0]
+        print(f"Number of users following: {num_following}")
+        curs.execute(ten_highest_ratings, (userid,))
+        top_ten = curs.fetchall()
+        print("Top 10 rated movies in your collection: ")
+        for i in range(len(top_ten)):
+            print(f"{i+1}: {top_ten[i][0]}")
+    return

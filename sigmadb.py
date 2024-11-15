@@ -91,7 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n", regex='[123456]')
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n6 - View my profile\n", regex='[123456]')
 
                     match action:
                         case "2":
@@ -110,6 +110,9 @@ def main():
                             collection_id = user_funcs.browse_collections(conn, userid)
                             if collection_id != -1:
                                 user_funcs.modify_collection(conn, userid, collection_id)
+                        case'6':
+                            user_funcs.view_profile(conn, userid)
+                            pass
 
                 print("Goodbye!")
 
