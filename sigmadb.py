@@ -123,7 +123,6 @@ def main():
                                     movie_funcs.view_recommended(conn, userid)
                         case'7':
                             user_funcs.view_profile(conn, userid)
-                            pass
 
                 print("Goodbye!")
 
