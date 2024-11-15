@@ -91,8 +91,7 @@ def main():
 
                 action = ""
                 while action != "1":
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n6 - recommended movies\n>", regex='[123456]')
-                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n6 - View my profile\n", regex='[123456]')
+                    action = input_utils.get_input_matching("1 - exit\n2 - browse movies\n3 - manage followed users\n4 - create collection\n5 - browse collections\n6 - recommended movies\n7 - View my profile\n>", regex='[123456]')
 
                     match action:
                         case "2":
@@ -122,7 +121,7 @@ def main():
                                     movie_funcs.top_5_releases_of_month(conn)
                                 case "4":
                                     movie_funcs.view_recommended(conn, userid)
-                        case'6':
+                        case'7':
                             user_funcs.view_profile(conn, userid)
                             pass
 
