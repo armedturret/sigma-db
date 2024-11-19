@@ -350,8 +350,8 @@ def top_20_among_followers(conn, user_id):
                     SELECT movie.title
                     FROM movie
                     JOIN watched ON movie.movieid = watched.movieid
-                    JOIN following ON watched.userid = following.followingid
-                    WHERE following.followerid = %s
+                    JOIN following ON watched.userid = following.followerid
+                    WHERE following.followingid = %s
                     GROUP BY movie.movieid
                     ORDER BY COUNT(watched.movieid) DESC
                     LIMIT 20
